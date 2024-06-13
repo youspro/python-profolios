@@ -1,94 +1,81 @@
 from tkinter import *
-import math
-# ---------------------------- CONSTANTS ------------------------------- #
-PINK = "#e2979c"
-RED = "#e7305b"
-GREEN = "#9bdeac"
-YELLOW = "#f7f5dd"
-FONT_NAME = "Courier"
-WORK_MIN = 25
-SHORT_BREAK_MIN = 5
-LONG_BREAK_MIN = 20
-reps = 0
-my_timer = None
+from tkinter import messagebox
+from random import choice, randint, shuffle
+import pyperclip
 
-# ---------------------------- TIMER RESET ------------------------------- # 
+# ---------------------------- PASSWORD GENERATOR ------------------------------- #
+def generate_password():
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    symbols = ['!', '#', '$', '%', '&', '(', ')', '*', '+']
 
-def reset_timer():
-    window.after_cancel(my_timer)
-    canvas.itemconfig(timer_text, text="00:00")
-    timer.config(text="Timer")
-    checkmarks.config(text="")
-    global reps
-    reps = 0
+    password_letters = [choice(letters) for _ in range(randint(8, 10))]
+    password_symbols = [choice(symbols) for _ in range(randint(2, 4))]
+    password_numbers = [choice(numbers) for _ in range(randint(2, 4))]
 
+    password_list = password_letters + password_numbers + password_symbols
+    shuffle(password_list)
 
-# ---------------------------- TIMER MECHANISM ------------------------------- #
+    password = "".join(password_list)
+    password_entry.insert(0, password)
+    pyperclip.copy(password)
+# ---------------------------- SAVE PASSWORD ------------------------------- #
 
 
-def start_timer():
-    global reps
-    reps += 1
+def save():
 
-    work_sec = WORK_MIN * 60
-    short_break_sec = SHORT_BREAK_MIN * 60
-    long_break_time = LONG_BREAK_MIN * 60
+    web = website_entry.get()
+    email = email_username_entry.get()
+    password = password_entry.get()
 
-    if reps == 1 or reps == 3 or reps == 5 or reps == 7:
-        count_down(work_sec)
-        timer.config(text="Work", fg=GREEN, bg=YELLOW)
-    if reps == 8:
-        count_down(long_break_time)
-        timer.config(text="Long Break", fg=RED, bg=YELLOW)
-    if reps == 2 or reps == 4 or reps == 6:
-        count_down(short_break_sec)
-        timer.config(text="Break", fg=PINK, bg=YELLOW)
-
-# ---------------------------- COUNTDOWN MECHANISM ------------------------------- # 
-
-
-def count_down(count):
-
-    count_min = math.floor(count / 60)
-    count_sec = count % 60
-    if count_sec < 10:
-        count_sec = f"0{count_sec}"
-
-    canvas.itemconfig(timer_text, text=f"{count_min}:{count_sec}")
-    if count > 0:
-        global my_timer
-        my_timer = window.after(1000, count_down, count - 1)
+    if len(web) == 0 or len(password) == 0:
+        messagebox.showinfo(title="Oops", message="Please don't don't leave any fields empty!")
     else:
-        start_timer()
-        mark = ""
-        for _ in range(math.floor(reps / 2)):
-            mark += "✔"
-        checkmarks.config(text=mark)
+        is_ok = messagebox.askokcancel(title=web, message=f"These are the details entered: \nEmail: {email}"
+                                                          f" \nPassword: {password} \n is it okay to save")
+
+        if is_ok:
+            with open("data.txt", "a") as data:
+                data.write(f"{web}|{email}|{password}\n")
+                website_entry.delete(0, END)
+                password_entry.delete(0, END)
+                email_username_entry.delete(0, END)
+                email_username_entry.insert(END, "dr.lagnadi@gmail.com")
+
 
 # ---------------------------- UI SETUP ------------------------------- #
 
 
 window = Tk()
-window.title("Pomodoro")
-window.config(pady=50, padx=100, bg=YELLOW)
+window.title("Password Manager")
+window.config(padx=50, pady=50)
+
+canvas = Canvas(height=200, width=200)
+img = PhotoImage(file="logo.png")
+canvas.create_image(100, 100, image=img)
+canvas.grid(column=1, row=0)
 
 
-canvas = Canvas(width=200, height=223, bg=YELLOW, highlightthickness=0)
-tomato_image = PhotoImage(file="tomato.png")
-canvas.create_image(100, 111, image=tomato_image)
-timer_text = canvas.create_text(100, 130, text="00:00", fill="white", font=(FONT_NAME, 35, "bold"))
-canvas.grid(column=1, row=1)
+website_entry = Entry(width=35)
+website_entry.grid(row=1, column=1, columnspan=2)
+website_entry.focus()
+email_username_entry = Entry(width=35)
+email_username_entry.grid(row=2, column=1, columnspan=2)
+email_username_entry.insert(END, "dr.lagnadi@gmail.com")
+password_entry = Entry(width=21)
+password_entry.grid(column=1, row=3)
 
 
-timer = Label(text="Timer", font=(FONT_NAME, 45, "bold"), bg=YELLOW, fg=GREEN)
-timer.grid(column=1, row=0)
+website_label = Label(text="Website:")
+website_label.grid(column=0, row=1)
+email_username_label = Label(text="Email/Username:")
+email_username_label.grid(column=0, row=2)
+password_label = Label(text="Password:")
+password_label.grid(column=0, row=3)
 
-start = Button(text="Start", bg=YELLOW, command=start_timer)
-start.grid(column=0, row=2)
+generate_button = Button(text="Generate Password", command=generate_password)
+generate_button.grid(column=2, row=3)
+add_button = Button(text="Add", width=36, command=save)
+add_button.grid(column=1, row=4, columnspan=2)
 
-reset = Button(text="Reset", bg=YELLOW, command=reset_timer)
-reset.grid(column=2, row=2)
-
-checkmarks = Label(bg=YELLOW, fg=GREEN)
-checkmarks.grid(column=1, row=3)
 window.mainloop()
